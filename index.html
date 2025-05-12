@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>AR.js + Blendshape (Audio Select First)</title>
+  <title>AR.js + Blendshape (Play/Pause Control)</title>
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.0/aframe/build/aframe-ar.min.js"></script>
   <style>
@@ -29,7 +28,8 @@
   </style>
 </head>
 <body>
-  <!-- 第一步：选择音频页面 -->
+
+  <!-- 第一步：音频选择 -->
   <div id="audio-select-screen" class="screen">
     <h2>🎵 Please select the sound track</h2>
     <div class="btn-container">
@@ -39,7 +39,7 @@
     </div>
   </div>
 
-  <!-- 第二步：AR 场景（初始隐藏） -->
+  <!-- 第二步：AR 场景 -->
   <a-scene embedded arjs vr-mode-ui="enabled: false" style="display:none" id="ar-scene">
     <a-marker preset="hiro">
       <a-entity id="blendshape-model"
@@ -58,7 +58,6 @@
     </div>
   </div>
 
-
   <script>
     let modelMesh, analyser, dataArray, audioContext, currentAudio;
     let isPlaying = false;
@@ -69,7 +68,7 @@
       document.getElementById('ar-scene').style.display = 'block';
       document.getElementById('ar-controls').style.display = 'flex';
       audioFile = filename;
-      initAudio(filename);  // 初始化但不播放
+      initAudio(filename);
     }
 
     function initAudio(filename) {
@@ -97,7 +96,7 @@
         audioContext.resume();
         isPlaying = true;
         document.getElementById('playPauseBtn').innerText = '⏸ Pause';
-        animate(); // 启动动画循环
+        animate(); // 启动动画
       } else {
         currentAudio.pause();
         isPlaying = false;
