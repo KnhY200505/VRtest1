@@ -45,47 +45,39 @@
       <a-entity id="blendshape-model"
                 gltf-model="Cube_Blendshape_test.glb"
                 position="0 0 0"
-                scale="1 1 1">
+                scale="0.5 0.5 0.5">
       </a-entity>
     </a-marker>
     <a-entity camera></a-entity>
   </a-scene>
 
+  <!-- 播放控制按钮 -->
+  <div id="ar-controls" class="screen" style="display: none; background: transparent; z-index: 10;">
+    <div class="btn-container">
+      <button id="playPauseBtn" onclick="togglePlayback()">▶️ Play</button>
+    </div>
+  </div>
+
+
   <script>
     let modelMesh, analyser, dataArray, audioContext, currentAudio;
+    let isPlaying = false;
+    let audioFile = "";
 
     function startARWithAudio(filename) {
-      // 隐藏音频选择界面，显示 AR 场景
       document.getElementById('audio-select-screen').style.display = 'none';
       document.getElementById('ar-scene').style.display = 'block';
-
-      // 播放音乐并分析频谱
-      playAudio(filename);
+      document.getElementById('ar-controls').style.display = 'flex';
+      audioFile = filename;
+      initAudio(filename);  // 初始化但不播放
     }
 
-    // 模型加载后获取 mesh
-    const modelEntity = document.querySelector('#blendshape-model');
-    modelEntity.addEventListener('model-loaded', () => {
-      const mesh = modelEntity.getObject3D('mesh');
-      mesh.traverse(node => {
-        if (node.isMesh && node.morphTargetInfluences) {
-          modelMesh = node;
-        }
-      });
-    });
-
-    function playAudio(filename) {
-      if (currentAudio) {
-        currentAudio.pause();
-        currentAudio = null;
-      }
-      if (audioContext) {
-        audioContext.close();
-      }
+    function initAudio(filename) {
+      if (currentAudio) currentAudio.pause();
+      if (audioContext) audioContext.close();
 
       currentAudio = new Audio(filename);
       currentAudio.loop = true;
-      currentAudio.autoplay = true;
 
       audioContext = new (window.AudioContext || window.webkitAudioContext)();
       const audioSource = audioContext.createMediaElementSource(currentAudio);
@@ -95,14 +87,26 @@
 
       audioSource.connect(analyser);
       analyser.connect(audioContext.destination);
+    }
 
-      currentAudio.play();
-      audioContext.resume();
-      animate();
+    function togglePlayback() {
+      if (!currentAudio || !audioContext) return;
+
+      if (!isPlaying) {
+        currentAudio.play();
+        audioContext.resume();
+        isPlaying = true;
+        document.getElementById('playPauseBtn').innerText = '⏸ Pause';
+        animate(); // 启动动画循环
+      } else {
+        currentAudio.pause();
+        isPlaying = false;
+        document.getElementById('playPauseBtn').innerText = '▶️ Play';
+      }
     }
 
     function animate() {
-      if (!analyser) return;
+      if (!analyser || !isPlaying) return;
       requestAnimationFrame(animate);
 
       analyser.getByteFrequencyData(dataArray);
@@ -113,6 +117,16 @@
         modelMesh.morphTargetInfluences[0] = influence;
       }
     }
+
+    const modelEntity = document.querySelector('#blendshape-model');
+    modelEntity.addEventListener('model-loaded', () => {
+      const mesh = modelEntity.getObject3D('mesh');
+      mesh.traverse(node => {
+        if (node.isMesh && node.morphTargetInfluences) {
+          modelMesh = node;
+        }
+      });
+    });
   </script>
 </body>
 </html>
