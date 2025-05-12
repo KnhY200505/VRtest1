@@ -1,3 +1,33 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AR.js + Blendshape (Audio Select First)</title>
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.0/aframe/build/aframe-ar.min.js"></script>
+  <style>
+    body { margin: 0; overflow: hidden; font-family: sans-serif; }
+    .screen {
+      position: absolute;
+      width: 100vw;
+      height: 100vh;
+      background: #111;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+    }
+    .btn-container button {
+      margin: 8px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
 <body>
   <!-- 第一步：选择音频页面 -->
   <div id="audio-select-screen" class="screen">
@@ -9,7 +39,7 @@
     </div>
   </div>
 
-  <!-- 第二步：AR 场景 -->
+  <!-- 第二步：AR 场景（初始隐藏） -->
   <a-scene embedded arjs vr-mode-ui="enabled: false" style="display:none" id="ar-scene">
     <a-marker preset="hiro">
       <a-entity id="blendshape-model"
@@ -21,25 +51,19 @@
     <a-entity camera></a-entity>
   </a-scene>
 
-  <!-- 播放控制按钮 -->
-  <div id="ar-controls" class="screen" style="display: none; background: transparent; z-index: 3;">
-    <div class="btn-container">
-      <button onclick="togglePlayback()">⏯️ Play / Pause</button>
-    </div>
-  </div>
-
   <script>
     let modelMesh, analyser, dataArray, audioContext, currentAudio;
-    let isPlaying = true;
 
     function startARWithAudio(filename) {
+      // 隐藏音频选择界面，显示 AR 场景
       document.getElementById('audio-select-screen').style.display = 'none';
       document.getElementById('ar-scene').style.display = 'block';
-      document.getElementById('ar-controls').style.display = 'flex';
+
+      // 播放音乐并分析频谱
       playAudio(filename);
     }
 
-    // 模型加载后
+    // 模型加载后获取 mesh
     const modelEntity = document.querySelector('#blendshape-model');
     modelEntity.addEventListener('model-loaded', () => {
       const mesh = modelEntity.getObject3D('mesh');
@@ -51,8 +75,13 @@
     });
 
     function playAudio(filename) {
-      if (currentAudio) currentAudio.pause();
-      if (audioContext) audioContext.close();
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+      }
+      if (audioContext) {
+        audioContext.close();
+      }
 
       currentAudio = new Audio(filename);
       currentAudio.loop = true;
@@ -69,19 +98,7 @@
 
       currentAudio.play();
       audioContext.resume();
-      isPlaying = true;
       animate();
-    }
-
-    function togglePlayback() {
-      if (!currentAudio) return;
-      if (isPlaying) {
-        currentAudio.pause();
-        isPlaying = false;
-      } else {
-        currentAudio.play();
-        isPlaying = true;
-      }
     }
 
     function animate() {
@@ -98,3 +115,4 @@
     }
   </script>
 </body>
+</html>
