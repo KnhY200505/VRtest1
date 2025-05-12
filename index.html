@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>AR.js + Blendshape (With Audio Control)</title>
+  <title>AR.js + Blendshape (With Audio & Mic)</title>
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.0/aframe/build/aframe-ar.min.js"></script>
   <style>
@@ -25,7 +25,6 @@
       font-size: 16px;
       cursor: pointer;
     }
-    /* 播放控制按钮左下角 */
     #ar-controls {
       position: fixed;
       bottom: 16px;
@@ -33,10 +32,6 @@
       z-index: 10;
     }
     #playPauseBtn {
-      position: fixed;
-      bottom: 16px;
-      left: 16px;
-      z-index: 10;
       background: rgba(0,0,0,0.6);
       color: white;
       border: none;
@@ -45,7 +40,6 @@
       font-size: 16px;
       cursor: pointer;
     }
-    /* 返回按钮右下角 */
     #back-btn {
       position: fixed;
       bottom: 16px;
@@ -70,6 +64,7 @@
       <button onclick="startARWithAudio('AnotherDayOfSun.MP3')">Audio 1</button>
       <button onclick="startARWithAudio('AnotherDayOfSun2.MP3')">Audio 2</button>
       <button onclick="startARWithAudio('AnotherDayOfSun3.MP3')">Audio 3</button>
+      <button onclick="startARWithMic()">🎤 Mic Input</button>
     </div>
   </div>
 
@@ -85,7 +80,7 @@
     <a-entity camera></a-entity>
   </a-scene>
 
-  <!-- 左下角控制播放按钮 -->
+  <!-- 左下角播放按钮 -->
   <div id="ar-controls" style="display: none;">
     <button id="playPauseBtn" onclick="togglePlayback()">Play</button>
   </div>
@@ -97,18 +92,50 @@
     let modelMesh, analyser, dataArray, audioContext, currentAudio;
     let isPlaying = false;
     let audioFile = "";
+    let usingMic = false;
 
     function startARWithAudio(filename) {
+      usingMic = false;
       document.getElementById('audio-select-screen').style.display = 'none';
       document.getElementById('ar-scene').style.display = 'block';
       document.getElementById('ar-controls').style.display = 'block';
       document.getElementById('back-btn').style.display = 'block';
       audioFile = filename;
-      initAudio(filename); // 初始化但默认暂停
+      initAudio(filename);
+    }
+
+    function startARWithMic() {
+      usingMic = true;
+      document.getElementById('audio-select-screen').style.display = 'none';
+      document.getElementById('ar-scene').style.display = 'block';
+      document.getElementById('ar-controls').style.display = 'block';
+      document.getElementById('back-btn').style.display = 'block';
+      initMicAudio();
+    }
+
+    async function initMicAudio() {
+      if (audioContext) await audioContext.close();
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const micSource = audioContext.createMediaStreamSource(stream);
+
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 64;
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+        micSource.connect(analyser);
+        isPlaying = true;
+        document.getElementById('playPauseBtn').innerText = 'Pause';
+        animate();
+      } catch (err) {
+        alert('Microphone access denied or not available.');
+        goBack();
+      }
     }
 
     function goBack() {
-      // 停止音乐和清除资源
       if (currentAudio) {
         currentAudio.pause();
         currentAudio = null;
@@ -117,8 +144,8 @@
         audioContext.close();
       }
       isPlaying = false;
+      usingMic = false;
 
-      // 显示音频选择页，隐藏 AR
       document.getElementById('audio-select-screen').style.display = 'flex';
       document.getElementById('ar-scene').style.display = 'none';
       document.getElementById('ar-controls').style.display = 'none';
@@ -145,25 +172,31 @@
     }
 
     function togglePlayback() {
-      if (!currentAudio || !audioContext) return;
+      if (!analyser || !audioContext) return;
 
-      if (!isPlaying) {
-        currentAudio.play();
-        audioContext.resume();
-        isPlaying = true;
-        document.getElementById('playPauseBtn').innerText = 'Pause';
-        animate();
+      if (usingMic) {
+        isPlaying = !isPlaying;
+        document.getElementById('playPauseBtn').innerText = isPlaying ? 'Pause' : 'Play';
+        if (isPlaying) animate();
       } else {
-        currentAudio.pause();
-        isPlaying = false;
-        document.getElementById('playPauseBtn').innerText = 'Play';
+        if (!currentAudio) return;
+        if (!isPlaying) {
+          currentAudio.play();
+          audioContext.resume();
+          isPlaying = true;
+          document.getElementById('playPauseBtn').innerText = 'Pause';
+          animate();
+        } else {
+          currentAudio.pause();
+          isPlaying = false;
+          document.getElementById('playPauseBtn').innerText = 'Play';
+        }
       }
     }
 
     function animate() {
       if (!analyser || !isPlaying) return;
       requestAnimationFrame(animate);
-
       analyser.getByteFrequencyData(dataArray);
       const avgFreq = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
       const influence = Math.min(avgFreq / 100, 1);
