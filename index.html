@@ -33,10 +33,17 @@
       z-index: 10;
     }
     #playPauseBtn {
+      position: fixed;
+      bottom: 16px;
+      left: 16px;
+      z-index: 10;
       background: rgba(0,0,0,0.6);
       color: white;
       border: none;
       border-radius: 6px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
     }
     /* 返回按钮右下角 */
     #back-btn {
@@ -80,11 +87,11 @@
 
   <!-- 左下角控制播放按钮 -->
   <div id="ar-controls" style="display: none;">
-    <button id="playPauseBtn" onclick="togglePlayback()">▶️ Play</button>
+    <button id="playPauseBtn" onclick="togglePlayback()">Play</button>
   </div>
 
   <!-- 右下角返回按钮 -->
-  <button id="back-btn" style="display: none;" onclick="goBack()">🔙 Back</button>
+  <button id="back-btn" style="display: none;" onclick="goBack()">Back</button>
 
   <script>
     let modelMesh, analyser, dataArray, audioContext, currentAudio;
@@ -117,7 +124,7 @@
       document.getElementById('ar-controls').style.display = 'none';
       document.getElementById('back-btn').style.display = 'none';
 
-      document.getElementById('playPauseBtn').innerText = '▶️ Play';
+      document.getElementById('playPauseBtn').innerText = 'Play';
     }
 
     function initAudio(filename) {
@@ -144,12 +151,12 @@
         currentAudio.play();
         audioContext.resume();
         isPlaying = true;
-        document.getElementById('playPauseBtn').innerText = '⏸ Pause';
+        document.getElementById('playPauseBtn').innerText = 'Pause';
         animate();
       } else {
         currentAudio.pause();
         isPlaying = false;
-        document.getElementById('playPauseBtn').innerText = '▶️ Play';
+        document.getElementById('playPauseBtn').innerText = 'Play';
       }
     }
 
