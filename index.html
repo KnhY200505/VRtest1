@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>AR.js + Blendshape (Play/Pause Control)</title>
+  <title>AR.js + Blendshape (With Audio Control)</title>
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.0/aframe/build/aframe-ar.min.js"></script>
   <style>
@@ -25,11 +25,38 @@
       font-size: 16px;
       cursor: pointer;
     }
+    /* 播放控制按钮左下角 */
+    #ar-controls {
+      position: fixed;
+      bottom: 16px;
+      left: 16px;
+      z-index: 10;
+    }
+    #playPauseBtn {
+      background: rgba(0,0,0,0.6);
+      color: white;
+      border: none;
+      border-radius: 6px;
+    }
+    /* 返回按钮右下角 */
+    #back-btn {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      z-index: 10;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
 
-  <!-- 第一步：音频选择 -->
+  <!-- 音频选择页 -->
   <div id="audio-select-screen" class="screen">
     <h2>🎵 Please select the sound track</h2>
     <div class="btn-container">
@@ -39,7 +66,7 @@
     </div>
   </div>
 
-  <!-- 第二步：AR 场景 -->
+  <!-- AR.js 场景 -->
   <a-scene embedded arjs vr-mode-ui="enabled: false" style="display:none" id="ar-scene">
     <a-marker preset="hiro">
       <a-entity id="blendshape-model"
@@ -51,12 +78,13 @@
     <a-entity camera></a-entity>
   </a-scene>
 
-  <!-- 播放控制按钮 -->
-  <div id="ar-controls" class="screen" style="display: none; background: transparent; z-index: 10;">
-    <div class="btn-container">
-      <button id="playPauseBtn" onclick="togglePlayback()">▶️ Play</button>
-    </div>
+  <!-- 左下角控制播放按钮 -->
+  <div id="ar-controls" style="display: none;">
+    <button id="playPauseBtn" onclick="togglePlayback()">▶️ Play</button>
   </div>
+
+  <!-- 右下角返回按钮 -->
+  <button id="back-btn" style="display: none;" onclick="goBack()">🔙 Back</button>
 
   <script>
     let modelMesh, analyser, dataArray, audioContext, currentAudio;
@@ -66,9 +94,30 @@
     function startARWithAudio(filename) {
       document.getElementById('audio-select-screen').style.display = 'none';
       document.getElementById('ar-scene').style.display = 'block';
-      document.getElementById('ar-controls').style.display = 'flex';
+      document.getElementById('ar-controls').style.display = 'block';
+      document.getElementById('back-btn').style.display = 'block';
       audioFile = filename;
-      initAudio(filename);
+      initAudio(filename); // 初始化但默认暂停
+    }
+
+    function goBack() {
+      // 停止音乐和清除资源
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+      }
+      if (audioContext) {
+        audioContext.close();
+      }
+      isPlaying = false;
+
+      // 显示音频选择页，隐藏 AR
+      document.getElementById('audio-select-screen').style.display = 'flex';
+      document.getElementById('ar-scene').style.display = 'none';
+      document.getElementById('ar-controls').style.display = 'none';
+      document.getElementById('back-btn').style.display = 'none';
+
+      document.getElementById('playPauseBtn').innerText = '▶️ Play';
     }
 
     function initAudio(filename) {
@@ -96,7 +145,7 @@
         audioContext.resume();
         isPlaying = true;
         document.getElementById('playPauseBtn').innerText = '⏸ Pause';
-        animate(); // 启动动画
+        animate();
       } else {
         currentAudio.pause();
         isPlaying = false;
