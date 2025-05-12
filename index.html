@@ -3,36 +3,44 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>AR.js + Blendshape</title>
-  <!-- 最新 A-Frame -->
+  <title>AR.js + Blendshape (Audio Select First)</title>
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-  <!-- 最新 AR.js for A-Frame -->
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.0/aframe/build/aframe-ar.min.js"></script>
   <style>
-    body { margin: 0; overflow: hidden; }
-    .btn-container {
+    body { margin: 0; overflow: hidden; font-family: sans-serif; }
+    .screen {
       position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 2;
+      width: 100vw;
+      height: 100vh;
+      background: #111;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
     }
-    button {
-      margin: 4px;
-      padding: 6px 12px;
-      font-size: 14px;
+    .btn-container button {
+      margin: 8px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <!-- 控制按钮 -->
-  <div class="btn-container">
-    <button onclick="playAudio('AnotherDayOfSun.MP3')">Audio 1</button>
-    <button onclick="playAudio('AnotherDayOfSun2.MP3')">Audio 2</button>
-    <button onclick="playAudio('AnotherDayOfSun3.MP3')">Audio 3</button>
+  <!-- 第一步：选择音频页面 -->
+  <div id="audio-select-screen" class="screen">
+    <h2>🎵 请选择要播放的音乐</h2>
+    <div class="btn-container">
+      <button onclick="startARWithAudio('AnotherDayOfSun.MP3')">Audio 1</button>
+      <button onclick="startARWithAudio('AnotherDayOfSun2.MP3')">Audio 2</button>
+      <button onclick="startARWithAudio('AnotherDayOfSun3.MP3')">Audio 3</button>
+    </div>
   </div>
 
-  <a-scene embedded arjs>
-    <!-- 在 marker 上显示模型 -->
+  <!-- 第二步：AR 场景（初始隐藏） -->
+  <a-scene embedded arjs vr-mode-ui="enabled: false" style="display:none" id="ar-scene">
     <a-marker preset="hiro">
       <a-entity id="blendshape-model"
                 gltf-model="Cube_Blendshape_test.glb"
@@ -40,12 +48,20 @@
                 scale="1 1 1">
       </a-entity>
     </a-marker>
-
     <a-entity camera></a-entity>
   </a-scene>
 
   <script>
     let modelMesh, analyser, dataArray, audioContext, currentAudio;
+
+    function startARWithAudio(filename) {
+      // 隐藏音频选择界面，显示 AR 场景
+      document.getElementById('audio-select-screen').style.display = 'none';
+      document.getElementById('ar-scene').style.display = 'block';
+
+      // 播放音乐并分析频谱
+      playAudio(filename);
+    }
 
     // 模型加载后获取 mesh
     const modelEntity = document.querySelector('#blendshape-model');
